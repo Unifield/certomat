@@ -172,7 +172,7 @@ func main() {
 	// - answer to /get
 	// - log all other requests and return 404
 	s := &http.Server{
-		Addr: "178.33.173.98:https",
+		Addr: ":https",
 		TLSConfig: &tls.Config{
 			GetCertificate: mgr.GetCertificate,
 		},
