@@ -27,6 +27,7 @@ var version = flag.Bool("version", false, "Show the version and exit.")
 var domainNames = map[string]bool{
 	"prod.unifield.org": true,
 	"dev.unifield.org":  true,
+	"dev.unifield.biz":  true,
 }
 
 var cacheDir = "/cache"
