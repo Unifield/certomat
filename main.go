@@ -11,10 +11,13 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"golang.org/x/crypto/acme"
+	// careful: this comes from vendor/, because it has our
+	// GetCertificateFromCSR in it.
 	"golang.org/x/crypto/acme/autocert"
 	"golang.org/x/net/context"
 )
@@ -26,7 +29,6 @@ var domainNames = map[string]bool{
 	"dev.unifield.org":  true,
 }
 
-// This is mounted to someplace on the hosting Docker machine.
 var cacheDir = "/cache"
 
 type Instance struct {
@@ -64,14 +66,24 @@ func HostWhitelistByDomains(doms map[string]bool) autocert.HostPolicy {
 }
 
 func notFound(w http.ResponseWriter, why string) {
-	log.Print("not found: ", why)
 	http.Error(w, why, http.StatusNotFound)
 }
 
-// Handles URLs like https://certomat/get
+func getNameFromCSR(csr []byte) string {
+	cr, err := x509.ParseCertificateRequest(csr)
+	if err != nil {
+		return ""
+	}
+	return cr.Subject.CommonName
+}
+
+// Handles URLs like https://certomat/get-cert-from-csr
 //
-// Read the CSR from the Body
+// Read the CSR from the Body, send it to LetsEncrypt,
+// send the cert back to them.
 func getHandler(w http.ResponseWriter, r *http.Request) {
+	log.Print(*r)
+
 	if r.Method != "POST" {
 		http.Error(w, "post only", http.StatusMethodNotAllowed)
 	}
@@ -79,21 +91,27 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 	csr, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		notFound(w, err.Error())
+		return
 	}
 
+	name := getNameFromCSR(csr)
 	tlscer, err := mgr.GetCertificateFromCSR(csr)
 	if err != nil {
+		log.Print(name, " not ok: ", err)
 		notFound(w, err.Error())
+		return
 	}
 
 	var buf bytes.Buffer
 	for _, b := range tlscer.Certificate {
 		pb := &pem.Block{Type: "CERTIFICATE", Bytes: b}
 		if err := pem.Encode(&buf, pb); err != nil {
+			log.Print(name, " not ok: ", err)
 			notFound(w, err.Error())
 		}
 	}
 	w.Write(buf.Bytes())
+	log.Print(name, " ok")
 }
 
 var mgr *autocert.Manager
@@ -134,7 +152,12 @@ func main() {
 		},
 	}
 	ac := &acme.Client{
-		HTTPClient: hc,
+		// Normally ACME_DIR_URL is unset. If you set it to
+		// https://acme-staging.api.letsencrypt.org/directory
+		// then certomat will talk to the staging server.
+		// When it is unset, we talk to the live server.
+		DirectoryURL: os.Getenv("ACME_DIR_URL"),
+		HTTPClient:   hc,
 	}
 	mgr = &autocert.Manager{
 		Client:     ac,
@@ -149,7 +172,7 @@ func main() {
 	// - answer to /get
 	// - log all other requests and return 404
 	s := &http.Server{
-		Addr: ":https",
+		Addr: "178.33.173.98:https",
 		TLSConfig: &tls.Config{
 			GetCertificate: mgr.GetCertificate,
 		},
@@ -163,8 +186,8 @@ func main() {
 			notFound(w, "unknown path")
 		}
 	})
-	http.Handle("/get-cert-from-csr/",
-		http.StripPrefix("/get-cert-from-csr/",
+	http.Handle("/get-cert-from-csr",
+		http.StripPrefix("/get-cert-from-csr",
 			http.HandlerFunc(getHandler)))
 
 	err := s.ListenAndServeTLS("", "")
