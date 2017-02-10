@@ -1,0 +1,19 @@
+*** venv/lib/python2.7/site-packages/certbot/plugins/standalone.py	2017-02-10 11:30:04.394075972 +0100
+--- /tmp/standalone.py	2017-02-10 11:29:47.614351773 +0100
+***************
+*** 60,66 ****
+          if port in self._instances:
+              return self._instances[port].server
+  
+!         address = ("", port)
+          try:
+              if challenge_type is challenges.TLSSNI01:
+                  server = acme_standalone.TLSSNI01Server(address, self.certs)
+--- 60,66 ----
+          if port in self._instances:
+              return self._instances[port].server
+  
+!         address = ("178.33.173.98", port)
+          try:
+              if challenge_type is challenges.TLSSNI01:
+                  server = acme_standalone.TLSSNI01Server(address, self.certs)
