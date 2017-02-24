@@ -1,3 +1,0 @@
-[submodule "vendor/golang.org/x/crypto/acme/autocert"]
-	path = vendor/golang.org/x/crypto/acme/autocert
-	url = https://github.com/Unifield/autocert
