@@ -72,7 +72,7 @@ func httpError(w http.ResponseWriter, why string, code int) {
 
 var certbotMu sync.Mutex
 
-// Handles URLs like https://certomat/get-cert-from-csr
+// Handles URLs like https://certomatFqdn/get-cert-from-csr
 //
 // Read the CSR from the Body, send it to LetsEncrypt,
 // send the cert back to them.
@@ -111,6 +111,7 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 
 	// turn csr into a cert by calling out to certbot
 	args := []string{"certbot", "certonly", "--standalone",
+		"--http-01-addr", certomatFqdn,
 		"--csr", tmpfile.Name(), "--config-dir", "./config",
 		"--work-dir", "./work", "--logs-dir", "./logs",
 		"--non-interactive", "--preferred-challenges", "http",
@@ -166,6 +167,7 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 var mgr *autocert.Manager
+var certomatFqdn string
 
 var gitRevision = "(dev)"
 
@@ -183,7 +185,7 @@ func main() {
 	var domainNames = map[string]bool{
 		*domain: true,
 	}
-	certomat := fmt.Sprintf("certomat.%v", *domain)
+	certomatFqdn := fmt.Sprintf("certomat.%v", *domain)
 
 	// Default dirUrl to empty, to select the production API. Then
 	// if the flag says we are not in prod mode, set the test mode URL.
@@ -223,7 +225,7 @@ func main() {
 	// - answer to /get-cert-from-csr
 	// - return a generic page for other requests (depending on requested host)
 	s := &http.Server{
-		Addr: fmt.Sprintf("%v:443", certomat),
+		Addr: fmt.Sprintf("%v:443", certomatFqdn),
 		TLSConfig: &tls.Config{
 			GetCertificate: mgr.GetCertificate,
 		},
@@ -231,7 +233,7 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Print(*r)
 
-		if r.Host == certomat {
+		if r.Host == certomatFqdn {
 			w.Write(welcomeCertomat)
 		} else {
 			w.Write(welcomeOther)
