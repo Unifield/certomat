@@ -14,15 +14,10 @@ clean:
 certomat:
 	GOOS=linux $(go) build -ldflags "-s -w -X main.gitRevision=$(rev)"
 
-setcap: certomat
-	sudo setcap CAP_NET_BIND_SERVICE=+eip certomat
+deploy-certodev: certomat
+	scp certomat certodev@uf6:
+	ssh root@uf6 setcap CAP_NET_BIND_SERVICE=+eip /home/certodev/certomat
 
-# Compile with special flags for installing in a Docker scratch container
-certomat-docker:
-	CGO_ENABLED=0 GOOS=linux $(go) build -a -installsuffix cgo \
-		-ldflags "-s -w -X main.gitRevision=$(rev)"
-
-image: clean certomat-docker
-	docker build -t unifield/certomat:$(rev) .
-	docker push unifield/certomat:$(rev)
-
+deploy-certomat: certomat
+	scp certomat certomat@uf6:
+	ssh root@uf6 setcap CAP_NET_BIND_SERVICE=+eip /home/certomat/certomat

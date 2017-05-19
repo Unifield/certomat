@@ -249,6 +249,7 @@ func main() {
 		http.StripPrefix("/get-cert-from-csr",
 			http.HandlerFunc(getHandler)))
 
+	log.Print("Version ", gitRevision)
 	log.Print("Listening on ", s.Addr)
 	err = s.ListenAndServeTLS("", "")
 	if err != nil {
