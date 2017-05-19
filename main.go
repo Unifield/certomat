@@ -111,10 +111,11 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 
 	// turn csr into a cert by calling out to certbot
 	args := []string{"certbot", "certonly", "--standalone",
-		"--http-01-addr", certomatFqdn,
+		"--http-01-addr", name,
 		"--csr", tmpfile.Name(), "--config-dir", "./config",
 		"--work-dir", "./work", "--logs-dir", "./logs",
 		"--non-interactive", "--preferred-challenges", "http",
+		"--agree-tos", "--email", "jeff.allen@geneva.msf.org",
 		"-d", name}
 	if !*prod {
 		args = append(args, "--test-cert")
@@ -132,6 +133,7 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
 	}
+	log.Print("certbot cmd: ", cmd)
 
 	certbotMu.Lock()
 	defer certbotMu.Unlock()
@@ -187,13 +189,6 @@ func main() {
 	}
 	certomatFqdn := fmt.Sprintf("certomat.%v", *domain)
 
-	// Default dirUrl to empty, to select the production API. Then
-	// if the flag says we are not in prod mode, set the test mode URL.
-	dirUrl := ""
-	if !*prod {
-		dirUrl = "https://acme-staging.api.letsencrypt.org/directory"
-	}
-
 	// Check that we can find certbot.
 	_, err := exec.LookPath("certbot")
 	if err != nil {
@@ -201,7 +196,11 @@ func main() {
 	}
 
 	// Get certbot registered and ready to go.
-	cmd := exec.Command("sh", "-c", "if [ -d ./config ]; then true; else certbot register --agree-tos --email jeff.allen@geneva.msf.org --config-dir ./config --work-dir ./work --logs-dir ./logs --non-interactive; fi")
+	cmdstr := fmt.Sprintf("if [ -d ./config/accounts/acme-staging.api.letsencrypt.org ]; then true; else certbot register --agree-tos --email jeff.allen@geneva.msf.org --config-dir ./config --work-dir ./work --logs-dir ./logs --non-interactive --test-cert; fi")
+	if *prod {
+		cmdstr = "if [ -d ./config/accounts/acme-v01.api.letsencrypt.org ]; then true; else certbot register --agree-tos --email jeff.allen@geneva.msf.org --config-dir ./config --work-dir ./work --logs-dir ./logs --non-interactive; fi"
+	}
+	cmd := exec.Command("sh", "-c", cmdstr)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
@@ -209,6 +208,12 @@ func main() {
 		log.Fatal("could not initialize certbot: ", err)
 	}
 
+	// Default dirUrl to empty, to select the production API. Then
+	// if the flag says we are not in prod mode, set the test mode URL.
+	dirUrl := ""
+	if !*prod {
+		dirUrl = "https://acme-staging.api.letsencrypt.org/directory"
+	}
 	ac := &acme.Client{
 		DirectoryURL: dirUrl,
 	}
