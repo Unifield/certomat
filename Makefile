@@ -8,10 +8,13 @@ all: build
 
 build: clean certomat
 
+vendor:
+	dep ensure
+
 clean:
 	rm -f certomat
 
-certomat:
+certomat: vendor
 	GOOS=linux $(go) build -ldflags "-s -w -X main.gitRevision=$(rev)"
 
 deploy-certodev: certomat
