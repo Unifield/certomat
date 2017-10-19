@@ -23,10 +23,6 @@ var domain = flag.String("domain", "", "The domain we are responsible for.")
 var prod = flag.Bool("prod", false, "If this is set, then talk to the real production LetsEncrypt API.")
 var cacheDir = flag.String("cache", "cache", "The location of the autocert cache directory.")
 
-type Instance struct {
-	Id, Name string
-}
-
 func getDomain(host string) (string, error) {
 	x := strings.Split(host, ".")
 	if len(x) > 1 {
