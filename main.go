@@ -172,7 +172,7 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 		"--csr", tmpfile.Name(), "--config-dir", "./config",
 		"--work-dir", "./work", "--logs-dir", "./logs",
 		"--non-interactive", "--preferred-challenges", "http",
-		"--agree-tos", "--email", "jeff.allen@geneva.msf.org",
+		"--agree-tos", "--email", "certomat@geneva.msf.org",
 		"-d", name}
 	if !*prod {
 		args = append(args, "--test-cert")
@@ -255,9 +255,9 @@ func main() {
 	}
 
 	// Get certbot registered and ready to go.
-	cmdstr := fmt.Sprintf("if [ -d ./config/accounts/acme-staging.api.letsencrypt.org ]; then true; else certbot register --agree-tos --email jeff.allen@geneva.msf.org --config-dir ./config --work-dir ./work --logs-dir ./logs --non-interactive --test-cert; fi")
+	cmdstr := fmt.Sprintf("if [ -d ./config/accounts/acme-staging.api.letsencrypt.org ]; then true; else certbot register --agree-tos --email certomat@geneva.msf.org --config-dir ./config --work-dir ./work --logs-dir ./logs --non-interactive --test-cert; fi")
 	if *prod {
-		cmdstr = "if [ -d ./config/accounts/acme-v01.api.letsencrypt.org ]; then true; else certbot register --agree-tos --email jeff.allen@geneva.msf.org --config-dir ./config --work-dir ./work --logs-dir ./logs --non-interactive; fi"
+		cmdstr = "if [ -d ./config/accounts/acme-v01.api.letsencrypt.org ]; then true; else certbot register --agree-tos --email certomat@geneva.msf.org --config-dir ./config --work-dir ./work --logs-dir ./logs --non-interactive; fi"
 	}
 	cmd := exec.Command("sh", "-c", cmdstr)
 	cmd.Stdout = os.Stdout
