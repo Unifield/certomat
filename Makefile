@@ -1,7 +1,7 @@
 # Use this makefile to create the binaries
 # so that they get an auditable version compiled into them.
 
-go=go1.8
+go=go
 rev=$(shell git rev-parse --short HEAD)
 
 all: build

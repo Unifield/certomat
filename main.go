@@ -13,7 +13,6 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
-
 	"golang.org/x/crypto/acme"
 	"golang.org/x/crypto/acme/autocert"
 )
@@ -283,7 +282,7 @@ func main() {
 		HostPolicy: HostWhitelistByDomains(domainNames),
 		Cache:      autocert.DirCache(*cacheDir),
 	}
-
+	go http.ListenAndServe(fmt.Sprintf("%v:80", certomatFqdn), mgr.HTTPHandler(nil))
 	// Set up the server:
 	// - listen on the correct IP address and port 443
 	// - use autocert
