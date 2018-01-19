@@ -13,7 +13,6 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
-	"golang.org/x/crypto/acme"
 	"golang.org/x/crypto/acme/autocert"
 )
 
@@ -243,9 +242,6 @@ func main() {
 		fmt.Println("Domain argument is required. Exiting.")
 		return
 	}
-	var domainNames = map[string]bool{
-		*domain: true,
-	}
 	certomatFqdn := fmt.Sprintf("certomat.%v", *domain)
 
 	// Check that we can find certbot.
@@ -267,22 +263,20 @@ func main() {
 		log.Fatal("could not initialize certbot: ", err)
 	}
 
-	// Default dirUrl to empty, to select the production API. Then
-	// if the flag says we are not in prod mode, set the test mode URL.
-	dirUrl := ""
-	if !*prod {
-		dirUrl = "https://acme-staging.api.letsencrypt.org/directory"
-	}
-	ac := &acme.Client{
-		DirectoryURL: dirUrl,
-	}
-	mgr = &autocert.Manager{
-		Client:     ac,
-		Prompt:     autocert.AcceptTOS,
-		HostPolicy: HostWhitelistByDomains(domainNames),
-		Cache:      autocert.DirCache(*cacheDir),
-	}
-	go http.ListenAndServe(fmt.Sprintf("%v:80", certomatFqdn), mgr.HTTPHandler(nil))
+    cfg := &tls.Config{
+        MinVersion: tls.VersionTLS12,
+        CurvePreferences: []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+        PreferServerCipherSuites: true,
+        CipherSuites: []uint16{
+            tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+            tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+            tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+            tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+            tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+        },
+    }
+    //go http.ListenAndServe(fmt.Sprintf("%v:80", certomatFqdn), mgr.HTTPHandler(nil))
+	//go http.ListenAndServe(fmt.Sprintf("%v:80", certomatFqdn), mgr.HTTPHandler(http.FileServer(http.Dir("well-known"))))
 	// Set up the server:
 	// - listen on the correct IP address and port 443
 	// - use autocert
@@ -290,9 +284,7 @@ func main() {
 	// - return a generic page for other requests (depending on requested host)
 	s := &http.Server{
 		Addr: fmt.Sprintf("%v:443", certomatFqdn),
-		TLSConfig: &tls.Config{
-			GetCertificate: mgr.GetCertificate,
-		},
+		TLSConfig: cfg,
 	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Print(*r)
@@ -310,7 +302,7 @@ func main() {
 
 	log.Print("Version ", gitRevision)
 	log.Print("Listening on ", s.Addr)
-	err = s.ListenAndServeTLS("", "")
+	err = s.ListenAndServeTLS(fmt.Sprintf("config/live/%v/fullchain.pem", certomatFqdn), fmt.Sprintf("config/live/%v/privkey.pem", certomatFqdn))
 	if err != nil {
 		log.Fatal(err)
 	}

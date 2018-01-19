@@ -24,3 +24,7 @@ deploy-certodev: certomat
 deploy-certomat: certomat
 	scp certomat certomat@uf6:
 	ssh root@uf6 setcap CAP_NET_BIND_SERVICE=+eip /home/certomat/certomat
+
+deploy-jfb: certomat
+	scp certomat certojfb@uf6:
+	ssh root@uf6 setcap CAP_NET_BIND_SERVICE=+eip /home/certojfb/certomat
