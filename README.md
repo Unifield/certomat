@@ -25,6 +25,7 @@ improvements that are first available in Go 1.8. Normally Go binaries can be bui
     . venv/bin/activate
     # Make this Python able to bind to ports under 1024
     sudo setcap CAP_NET_BIND_SERVICE=+eip venv/bin/python2
+    sudo setcap  CAP_NET_BIND_SERVICE=+eip certomat
     pip install certbot
 
 Apply the hack to let it listen on uf6-2.unifield.org only:

@@ -3,13 +3,18 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:43adf91783cc814f60c0dd21c9aadf0b5284721e13542e124536638e0b43a6b3"
   name = "golang.org/x/crypto"
-  packages = ["acme","acme/autocert"]
+  packages = [
+    "acme",
+    "acme/autocert",
+  ]
+  pruneopts = ""
   revision = "13931e22f9e72ea58bb73048bc752b48c6d4d4ac"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "482bebd72c897704e9e8836a9321551f5c9f501c6fd4fd9787ed7beb86b945b9"
+  input-imports = ["golang.org/x/crypto/acme/autocert"]
   solver-name = "gps-cdcl"
   solver-version = 1
